@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Loader2, BookOpen, Quote, Plus, ChevronRight } from 'lucide-react';
 import api from '../api';
+import { searchResearch, summarizeContent } from '../services/geminiService';
 import { useEditorStore } from '../store';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'motion/react';
@@ -19,8 +20,10 @@ export default function NexusSearch() {
     setLoading(true);
     setSummary(null);
     try {
-      const { data } = await api.post('/research/search', { query });
+      const data = await searchResearch(query);
       setResults(data);
+      // Optional: Save to history via backend if needed
+      await api.post('/research/history', { query, results: data });
     } catch (err) {
       console.error(err);
     } finally {
@@ -32,8 +35,8 @@ export default function NexusSearch() {
     if (!results?.text) return;
     setSummarizing(true);
     try {
-      const { data } = await api.post('/research/summarize', { content: results.text });
-      setSummary(data.summary);
+      const summaryText = await summarizeContent(results.text);
+      setSummary(summaryText);
     } catch (err) {
       console.error(err);
     } finally {

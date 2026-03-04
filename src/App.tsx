@@ -1,11 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, Component, ErrorInfo, ReactNode } from 'react';
 import NexusSearch from './components/NexusSearch';
 import NexusEditor from './components/NexusEditor';
 import { useAuthStore } from './store';
-import { LogOut, User, FileText, Settings, Sparkles } from 'lucide-react';
+import { LogOut, FileText, Sparkles } from 'lucide-react';
 import api from './api';
 
-export default function App() {
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean, error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-stone-900 flex flex-col items-center justify-center p-10 text-center text-white">
+          <Sparkles className="w-12 h-12 text-emerald-400 mb-6" />
+          <h1 className="text-3xl font-serif italic mb-4">Something went wrong.</h1>
+          <div className="bg-white/5 backdrop-blur-md p-6 rounded-2xl border border-white/10 text-left max-w-2xl w-full mb-8">
+            <p className="text-stone-400 text-xs font-mono uppercase tracking-widest mb-2">Error Details</p>
+            <pre className="text-sm text-red-400 overflow-auto whitespace-pre-wrap font-mono">
+              {this.state.error?.message}
+            </pre>
+          </div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-8 py-3 bg-emerald-500 text-stone-900 rounded-xl font-bold hover:bg-emerald-400 transition-all"
+          >
+            Reload NEXUSPDF
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function NexusApp() {
   const { user, token, setAuth, logout } = useAuthStore();
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -131,5 +170,13 @@ export default function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <NexusApp />
+    </ErrorBoundary>
   );
 }
